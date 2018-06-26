@@ -1,0 +1,27 @@
+@import "../sass/utilities/initial-variables";
+@import "../sass/utilities/functions";
+@import "../bulma";
+
+$blue: #72d0eb;
+$pink: #ffb3b3;
+$pink-invert: #fff;
+
+$family-serif: "Merriweather", "Georgia", serif;
+
+$primary: $pink;
+$primary-invert: $pink-invert;
+$danger: $orange;
+$family-primary: $family-serif;
+
+$linkedin: #0077b5;
+$linkedin-invert: findColorInvert($linkedin);
+$github: #333;
+$github-invert: findColorInvert($github);
+
+@import "../sass/utilities/derived-variables";
+$addColors: (
+  "linkedin": ($linkedin, $linkedin-invert),
+  "github": ($github, $github-invert)
+);
+$colors: map-merge($colors, $addColors);
+

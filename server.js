@@ -9,7 +9,7 @@ var cheerio = require("cheerio");
 var app = express();
 
 // Database configuration
-var databaseUrl = "scraper";
+var databaseUrl = "onion-scraper";
 var collections = ["scrapedData"];
 
 // Hook mongojs configuration to the db variable
@@ -20,11 +20,11 @@ db.on("error", function(error) {
 
 // Main route (simple Hello World Message)
 app.get("/", function(req, res) {
-  res.send("Hello world");
+  res.send("You bold scraper, you!");
 });
 
 app.get("/all", function(req, res) {
-    // Query: In our database, go to the animals collection, then "find" everything
+    // Query: In our database, go to the relevant collection, then "find" everything
     db.scrapedData.find({}, function(error, found) {
       // Log any errors if the server encounters one
       if (error) {
@@ -40,13 +40,14 @@ app.get("/all", function(req, res) {
   // Scrape data from one site and place it into the mongodb db
 app.get("/scrape", function(req, res) {
     // Make a request for the news section of `ycombinator`
-    request("https://news.ycombinator.com/", function(error, response, html) {
+    request("https://www.theonion.com/", function(error, response, html) {
       // Load the html body from request into cheerio
       var $ = cheerio.load(html);
       // For each element with a "title" class
       $(".title").each(function(i, element) {
         // Save the text and href of each link enclosed in the current element
         var title = $(element).children("a").text();
+        var summary = $(element).children("a").text();
         var link = $(element).children("a").attr("href");
   
         // If this found element had both a title and a link
