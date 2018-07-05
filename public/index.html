@@ -6,6 +6,7 @@
     <title>Webscraping</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
+    <link rel="stylesheet" href="style.scss">
   </head>
   <body>
   <section class="section">
@@ -16,18 +17,25 @@
             <p class="subtitle">
                 Scrape the face of the web with <strong>US</strong>!
             </p>
-            <a class="button is-primary" id="scrape">
-                Scrape
-            </a>
-            <a class="button is-primary" id="saved-scrapes">
-                Scabs
-            </a>
-            <a class="button is-primary" id="comments">
-                Comments
-            </a>
+            <div  id="scrape">
+                <a class="button is-primary">
+                    Scrape
+                </a>
+            </div>
+            <div  id="saved-scrapes">
+                <a class="button is-primary">
+                    Scabs
+                </a>
+            </div>
+            <div id="comment">
+                <a class="button is-primary">
+                    Comment
+                </a>
+            </div>
         </div>
     </section>
     <div id="results"></div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -1,82 +1,94 @@
 // Dependencies
 var express = require("express");
-var mongojs = require("mongojs");
-// Require request and cheerio. This makes the scraping possible
+//var mongojs = require("mongojs");
 var request = require("request");
+var axios = require("axios");
 var cheerio = require("cheerio");
-
-// Initialize Express
+var bodyParser = require("body-parser");
+var logger = require("morgan");
+var mongoose = require("mongoose");
 var app = express();
+var db = require("./models");
+app.use(logger("dev"));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+mongoose.connect("mongodb://localhost/basic-web-scraper");
 
-// Database configuration
-var databaseUrl = "onion-scraper";
-var collections = ["scrapedData"];
-
-// Hook mongojs configuration to the db variable
-var db = mongojs(databaseUrl, collections);
-db.on("error", function(error) {
-  console.log("Database Error:", error);
-});
-
-// Main route (simple Hello World Message)
+// Main route
 app.get("/", function(req, res) {
   res.send("You bold scraper, you!");
 });
 
+// Scrape data from one site and place it into the mongodb db
+app.get("/scrape", function(req, res) {
+    request("http://www.echojs.com/", function(error, response, html) {
+        console.log(html);
+        var $ = cheerio.load(html);
+
+        $(".title").each(function(i, element) {
+            var title = $(element).children("a").text();
+            var summary = $(element).children("a").text();
+            var link = $(element).children("a").attr("href");
+            if (title && link) {
+            db.scrapedData.insert({
+                title: title,
+                summary: summary,
+                link: link
+                },
+                function(err, inserted) {
+                    if (err) {
+                    console.log(err);
+                    }
+                    else {
+                    console.log(inserted);
+                    }
+                });
+            }
+        });
+    });
+
+    res.send("Scrape Complete");
+});
+
+// Show all scraped articles.
 app.get("/all", function(req, res) {
-    // Query: In our database, go to the relevant collection, then "find" everything
     db.scrapedData.find({}, function(error, found) {
-      // Log any errors if the server encounters one
-      if (error) {
-        console.log(error);
-      }
-      // Otherwise, send the result of this query to the browser
-      else {
-        res.json(found);
-      }
+        if (error) {
+            console.log(error);
+        }
+        else {
+            res.json(found);
+        }
     });
   });
 
-  // Scrape data from one site and place it into the mongodb db
-app.get("/scrape", function(req, res) {
-    // Make a request for the news section of `ycombinator`
-    request("https://www.theonion.com/", function(error, response, html) {
-      // Load the html body from request into cheerio
-      var $ = cheerio.load(html);
-      // For each element with a "title" class
-      $(".title").each(function(i, element) {
-        // Save the text and href of each link enclosed in the current element
-        var title = $(element).children("a").text();
-        var summary = $(element).children("a").text();
-        var link = $(element).children("a").attr("href");
-  
-        // If this found element had both a title and a link
-        if (title && link) {
-          // Insert the data in the scrapedData db
-          db.scrapedData.insert({
-            title: title,
-            link: link
-          },
-          function(err, inserted) {
-            if (err) {
-              // Log the error if one is encountered during the query
-              console.log(err);
-            }
-            else {
-              // Otherwise, log the inserted data
-              console.log(inserted);
-            }
-          });
-        }
-      });
+// Add comments to articles
+app.post("/articles/:id", function(req, res) {
+    db.Comment.create(req.body)
+    .then(function(dbComment) {
+        return db.Article.findOneAndUpdate({ _id: req.params.id }, { note: dbComment._id }, { new: true });
+    })
+    .then(function(dbArticle) {
+        res.json(dbArticle);
+    })
+    .catch(function(err) {
+        res.json(err);
     });
+});
+
+// Route for grabbing one article with comments
+app.get("/articles/:id", function(req, res) {
+    db.Article.findOne({ _id: req.params.id })
+        .populate("note")
+        .then(function(dbArticle) {
+            res.json(dbArticle);
+        })
+        .catch(function(err) {
+            res.json(err);
+        });
+});
   
-    // Send a "Scrape Complete" message to the browser
-    res.send("Scrape Complete");
-  });
-  
-  // Listen on port 3000
-  app.listen(3000, function() {
-    console.log("App running on port 3000!");
-  });
+app.listen(3000, function() {
+console.log("App running on port 3000!");
+});
   
