@@ -16,17 +16,17 @@ app.use(express.static("public"));
 mongoose.connect("mongodb://localhost/basic-web-scraper");
 
 // Main route
-app.get("/", function(req, res) {
-  res.send("You bold scraper, you!");
+app.get("/", function (req, res) {
+    res.send("You bold scraper, you!");
 });
 
 // Scrape data from site and place it into the mongodb db
-app.get("/scrape", function(req, res) {
-    axios.get("https://www.theonion.com/").then(function(response) {
+app.get("/scrape", function (req, res) {
+    axios.get("https://www.theonion.com/").then(function (response) {
         console.log(response.data);
         var $ = cheerio.load(response.data);
 
-        $("h1.headline").each(function(i, element) {
+        $("h1.headline").each(function (i, element) {
             var result = {};
             result.image = $(this)
                 .children("img")
@@ -45,13 +45,13 @@ app.get("/scrape", function(req, res) {
                 .attr("href");
             console.log(result);
             db.Article.create(result)
-                .then(function(dbArticle) {
+                .then(function (dbArticle) {
                     console.log(dbArticle);
                     res.redirect("/")
                 })
-            .catch(function(err) {
-                return res.json(err);
-            });
+                .catch(function (err) {
+                    return res.json(err);
+                });
         });
 
         // $(".title").each(function(i, element) {
@@ -80,60 +80,70 @@ app.get("/scrape", function(req, res) {
 });
 
 // Show all scraped articles.
-app.get("/all", function(req, res) {
+app.get("/all", function (req, res) {
     db.Article.find({})
-    .then(function(dbArticle) {
-        res.json(dbArticle);
-    })
-    .catch(function(err) {
-    
-       res.json(err)
-    });
-  });
+        .then(function (dbArticle) {
+            res.json(dbArticle);
+        })
+        .catch(function (err) {
+
+            res.json(err)
+        });
+});
 
 // Add comments to articles
-app.post("/articles/:id", function(req, res) {
+app.post("/articles/:id", function (req, res) {
     db.Comment
-    .create(req.body)
-    .then(function(dbComment) {
-        return db.Article.findOneAndUpdate(
-            { _id: req.params.id },
-            {$push: { comment: dbComment._id }},
-            { new: true });
-    })
-    .then(function(dbArticle) {
-        res.json(dbArticle);
-    })
-    .catch(function(err) {
-        res.json(err);
-    });
+        .create(req.body)
+        .then(function (dbComment) {
+            return db.Article.findOneAndUpdate(
+                { _id: req.params.id },
+                { $push: { comment: dbComment._id } },
+                { new: true });
+        })
+        .then(function (dbArticle) {
+            res.json(dbArticle);
+        })
+        .catch(function (err) {
+            res.json(err);
+        });
     //console.log(dbArticle);
 });
 
 // Route for grabbing one article with comments
-app.get("/articles/:id", function(req, res) {
+app.get("/articles/:id", function (req, res) {
     db.Article.findOne({ _id: req.params.id })
         .populate("comment")
-        .then(function(dbArticle) {
+        .then(function (dbArticle) {
             res.json(dbArticle);
         })
-        .catch(function(err) {
+        .catch(function (err) {
             res.json(err);
         });
 });
 // Delete comment
-app.post("/deletecomment/:id", function(req, res) {
+app.get("/deletecommentbyid/:id", function (req, res) {
+    console.log(req.params.id);
     db.Comment
-        .findByIdAndRemove(ObjectId(req.params.id))
-        .then(function(removed) {
-            res.json(removed);
-        })
-        .catch(function(err) {
-            res.json(err);
+        .findByIdAndRemove(req.params.id, function (err, todo) {  
+            if (err) {
+               console.log(err);
+            } 
+            else {
+                console.log("Comment deleted!")
+                res.sendStatus(200);
+            }
+        
         });
-  });
-  
-app.listen(3000, function() {
+        // .then(function (removed) {
+        //     console.log(removed);
+        //     res.json(removed);
+        // })
+        // .catch(function (err) {
+        //     res.json(err);
+        // });
+});
+
+app.listen(3000, function () {
     console.log("App running on port 3000!");
 });
-  
